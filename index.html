@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Daftar Pengguna</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  
 </head>
 <body class="bg-gray-100 min-h-screen p-6">
   <div class="max-w-6xl mx-auto bg-white p-6 rounded shadow">
@@ -17,6 +16,7 @@
       <thead class="bg-gray-200">
         <tr>
           <th class="px-4 py-2 border">ID</th>
+          <th class="px-4 py-2 border">Avatar</th>
           <th class="px-4 py-2 border">Nama</th>
           <th class="px-4 py-2 border">Email</th>
           <th class="px-4 py-2 border">Aksi</th>
@@ -34,6 +34,8 @@
       <h2 class="text-lg font-bold mb-4">Edit Pengguna</h2>
       <input type="text" id="editName" class="w-full border p-2 mb-3 rounded" placeholder="Nama">
       <input type="email" id="editEmail" class="w-full border p-2 mb-3 rounded" placeholder="Email">
+      <label class="block mb-1 font-medium" for="editPhoto">Foto</label>
+      <input type="file" id="editPhoto" class="w-full border p-2 mb-3 rounded">
       <div class="flex justify-end gap-2">
         <button onclick="closeModal()" class="bg-gray-300 px-4 py-2 rounded">Batal</button>
         <button onclick="saveChanges()" class="bg-blue-500 text-white px-4 py-2 rounded">Simpan</button>
@@ -45,7 +47,7 @@
     const token = localStorage.getItem('token');
     const userTableBody = document.getElementById('userTableBody');
     const message = document.getElementById('message');
-
+    const picUrl = "http://localhost:3000/uploads";
     let selectedUserId = null;
 
     if (!token) {
@@ -65,6 +67,9 @@
           const row = `
             <tr>
               <td class="border px-4 py-2">${user.id}</td>
+              <td class="border px-4 py-2">
+                <a href="${picUrl}/${user.photo}" target="_BLANK"><img src="${picUrl}/${user.photo}" alt="Avatar" class="w-12 h-12 rounded-full"></a>
+              </td>
               <td class="border px-4 py-2">${user.name}</td>
               <td class="border px-4 py-2">${user.email}</td>
               <td class="border px-4 py-2 space-x-2">
@@ -75,7 +80,7 @@
           userTableBody.innerHTML += row;
         });
       })
-      .catch(err => {
+      .catch(() => {
         message.textContent = 'Gagal mengambil data.';
       });
     }
@@ -99,23 +104,28 @@
     function saveChanges() {
       const name = document.getElementById('editName').value;
       const email = document.getElementById('editEmail').value;
+      const photo = document.getElementById('editPhoto').files[0];
+
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('email', email);
+      if (photo) {
+        formData.append('photo', photo);
+      }
 
       fetch(`http://localhost:3000/api/users/${selectedUserId}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           Authorization: 'Bearer ' + token
         },
-        body: JSON.stringify({ name, email })
+        body: formData
       })
       .then(res => {
         if (!res.ok) throw new Error('Gagal update');
         closeModal();
         fetchUsers();
       })
-      .catch(err => {
-        alert(err.message);
-      });
+      .catch(err => alert(err.message));
     }
 
     function deleteUser(id) {
@@ -130,13 +140,10 @@
           if (!res.ok) throw new Error('Gagal hapus');
           fetchUsers();
         })
-        .catch(err => {
-          alert(err.message);
-        });
+        .catch(err => alert(err.message));
       }
     }
 
-    // Muat data pengguna saat halaman dibuka
     fetchUsers();
   </script>
 </body>
